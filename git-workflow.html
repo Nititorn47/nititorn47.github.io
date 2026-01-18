@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>p̲a̲m̲ Git Workflow Analysis</title>
+
+    <!-- Google Fonts - Thai Support -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --accent-red: #ff4757;
+            --accent-green: #2ed573;
+            --accent-blue: #5352ed;
+            --accent-yellow: #ffa502;
+            --accent-purple: #a55eea;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --border-color: #2a2a3a;
+
+            /* Thai-optimized fonts */
+            --font-thai: 'IBM Plex Sans Thai', 'Noto Sans Thai', 'Sarabun', sans-serif;
+            --font-mono: 'IBM Plex Mono', 'Monaco', 'Consolas', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-thai);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.8;
+            font-size: 16px;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, transparent 100%);
+            margin-bottom: 2rem;
+            border-radius: 16px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-number.red {
+            color: var(--accent-red);
+        }
+
+        .stat-number.green {
+            color: var(--accent-green);
+        }
+
+        .stat-number.blue {
+            color: var(--accent-blue);
+        }
+
+        .stat-number.yellow {
+            color: var(--accent-yellow);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .badge-red {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        .badge-green {
+            background: rgba(46, 213, 115, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+        }
+
+        /* Graph Card */
+        .graph-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        /* Problems List */
+        .problems-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .problem-card {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .problem-card h3 {
+            color: var(--accent-red);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Best Practice Cards */
+        .practice-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .practice-card {
+            background: rgba(46, 213, 115, 0.1);
+            border: 1px solid rgba(46, 213, 115, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .practice-card h3 {
+            color: var(--accent-green);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .practice-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .bad {
+            color: var(--accent-red);
+        }
+
+        .good {
+            color: var(--accent-green);
+        }
+
+        /* Branch Naming */
+        .naming-convention {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .naming-convention code {
+            display: block;
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            color: var(--accent-green);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .graph-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Workflow Container - Side by Side Layout */
+        .workflow-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .workflow-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Commands Panel */
+        .commands-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            height: fit-content;
+            position: sticky;
+            top: 1rem;
+        }
+
+        .commands-panel h3 {
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .command-step {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--accent-blue);
+            transition: all 0.3s ease;
+        }
+
+        .command-step:hover {
+            border-left-color: var(--accent-green);
+            transform: translateX(4px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .command-step.hotfix {
+            border-left-color: var(--accent-red);
+        }
+
+        .command-step.hotfix:hover {
+            border-left-color: var(--accent-yellow);
+        }
+
+        .command-step.cleanup {
+            border-left-color: var(--accent-purple);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-number {
+            background: var(--accent-blue);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .command-step.hotfix .step-number {
+            background: var(--accent-red);
+        }
+
+        .command-step.cleanup .step-number {
+            background: var(--accent-purple);
+        }
+
+        .step-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            flex: 1;
+        }
+
+        .arrow {
+            color: var(--accent-green);
+            font-size: 1.2rem;
+        }
+
+        .command-code {
+            display: block;
+            background: var(--bg-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: var(--accent-green);
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        /* Graph Panel */
+        .graph-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Diagram Legend */
+        .diagram-legend {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .diagram-legend h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📊 Git Workflow Analysis</h1>
+            <p>p̲a̲m̲ Repository - การวิเคราะห์และเปรียบเทียบ Git Workflow</p>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number red">531</div>
+                <div class="stat-label">Total Branches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number yellow">382</div>
+                <div class="stat-label">Release Branches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number blue">125</div>
+                <div class="stat-label">Feature/Bug Branches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number green">2</div>
+                <div class="stat-label">Main Branches</div>
+            </div>
+        </div>
+
+        <!-- Current Workflow Section -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-badge badge-red">🔴 CURRENT</span>
+                <h2 class="section-title">Current Workflow (สถานะปัจจุบัน)</h2>
+            </div>
+
+            <div class="problems-list">
+                <div class="problem-card">
+                    <h3>❌ Branch Explosion</h3>
+                    <p>มี 382 release branches สำหรับแต่ละ client พร้อม sub-branches (-deliver, -metrics, -migrate,
+                        -node-daemon)</p>
+                </div>
+                <div class="problem-card">
+                    <h3>❌ Direct Commits</h3>
+                    <p>มีการ commit ตรงไปที่ develop โดยไม่ผ่าน feature branch และไม่มี code review</p>
+                </div>
+                <div class="problem-card">
+                    <h3>❌ Circular Merges</h3>
+                    <p>มีการ merge develop → release และ release → develop สลับไปมา ทำให้ history สับสน</p>
+                </div>
+                <div class="problem-card">
+                    <h3>❌ No Version Tags</h3>
+                    <p>ไม่มี semantic versioning ที่ชัดเจน (v1.0.0, v1.1.0)</p>
+                </div>
+            </div>
+
+            <div class="graph-card">
+                <div class="mermaid">
+                    gitGraph
+                    commit id: "initial"
+                    branch develop
+                    checkout develop
+                    commit id: "base"
+
+                    branch release/client-a
+                    commit id: "client-a-cfg"
+
+                    checkout develop
+                    commit id: "feat-x"
+                    commit id: "bug-fix"
+
+                    checkout release/client-a
+                    merge develop id: "sync" tag: "⚠️"
+                    commit id: "client-hotfix"
+
+                    checkout develop
+                    branch feature/webhook
+                    commit id: "webhook-1"
+                    commit id: "webhook-2"
+
+                    checkout develop
+                    merge feature/webhook id: "merge-feat"
+
+                    branch release/client-b
+                    commit id: "client-b-cfg"
+
+                    checkout develop
+                    commit id: "direct-1" tag: "❌"
+                    commit id: "direct-2" tag: "❌"
+
+                    checkout develop
+                    merge release/client-a id: "backmerge" tag: "⚠️"
+
+                    branch release/client-c
+                    commit id: "client-c"
+
+                    checkout develop
+                    commit id: "latest"
+                </div>
+            </div>
+        </section>
+
+        <!-- Best Practice Section -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-badge badge-green">🟢 RECOMMENDED</span>
+                <h2 class="section-title">Best Practice Workflow (แนะนำ)</h2>
+            </div>
+
+            <div class="practice-list">
+                <div class="practice-card">
+                    <h3>✅ Protected Branches</h3>
+                    <p>main และ develop ต้อง protected, ห้าม push ตรง, ต้องผ่าน PR เท่านั้น</p>
+                </div>
+                <div class="practice-card">
+                    <h3>✅ Feature Branch Workflow</h3>
+                    <p>ทุก feature ต้อง branch จาก develop และ merge กลับผ่าน PR</p>
+                </div>
+                <div class="practice-card">
+                    <h3>✅ Semantic Versioning</h3>
+                    <p>ใช้ version tags แบบ v1.0.0, v1.1.0 และ CHANGELOG.md</p>
+                </div>
+                <div class="practice-card">
+                    <h3>✅ Config-Based Deployment</h3>
+                    <p>ใช้ configuration files (YAML) แทน multiple release branches</p>
+                </div>
+            </div>
+
+            <!-- Workflow with Commands -->
+            <div class="workflow-container">
+                <!-- Left: Commands -->
+                <div class="commands-panel">
+                    <h3>📋 Git Commands</h3>
+
+                    <div class="command-step" data-step="1">
+                        <div class="step-header">
+                            <span class="step-number">1</span>
+                            <span class="step-title">สร้าง Feature Branch</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git checkout develop
+git pull origin develop
+git checkout -b feature/user-auth</code>
+                    </div>
+
+                    <div class="command-step" data-step="2">
+                        <div class="step-header">
+                            <span class="step-number">2</span>
+                            <span class="step-title">Commit & Push</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git add .
+git commit -m "feat: add auth"
+git push origin feature/user-auth</code>
+                    </div>
+
+                    <div class="command-step" data-step="3">
+                        <div class="step-header">
+                            <span class="step-number">3</span>
+                            <span class="step-title">Create PR & Merge</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# สร้าง Pull Request บน GitHub/Bitbucket
+# Review & Approve
+# Squash & Merge → develop</code>
+                    </div>
+
+                    <div class="command-step" data-step="4">
+                        <div class="step-header">
+                            <span class="step-number">4</span>
+                            <span class="step-title">สร้าง Release Branch</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git checkout develop
+git pull origin develop
+git checkout -b release/v1.1.0</code>
+                    </div>
+
+                    <div class="command-step" data-step="5">
+                        <div class="step-header">
+                            <span class="step-number">5</span>
+                            <span class="step-title">Bump Version</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# แก้ไข version ใน package.json/go.mod
+git commit -m "chore: bump v1.1.0"
+# Update CHANGELOG.md</code>
+                    </div>
+
+                    <div class="command-step" data-step="6">
+                        <div class="step-header">
+                            <span class="step-number">6</span>
+                            <span class="step-title">Merge to Main & Tag</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# PR: release/v1.1.0 → main
+git checkout main
+git tag v1.1.0
+git push origin v1.1.0</code>
+                    </div>
+
+                    <div class="command-step" data-step="7">
+                        <div class="step-header">
+                            <span class="step-number">7</span>
+                            <span class="step-title">Backmerge to Develop</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git checkout develop
+git merge release/v1.1.0
+git push origin develop</code>
+                    </div>
+
+                    <div class="command-step hotfix" data-step="8">
+                        <div class="step-header">
+                            <span class="step-number">🔥</span>
+                            <span class="step-title">Hotfix (ฉุกเฉิน)</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git checkout main
+git checkout -b hotfix/critical
+# แก้ไข bug
+git commit -m "fix: critical bug"
+# PR → main, tag v1.1.1
+# merge → develop</code>
+                    </div>
+
+                    <div class="command-step cleanup" data-step="9">
+                        <div class="step-header">
+                            <span class="step-number">🧹</span>
+                            <span class="step-title">Cleanup Branch</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# หลัง merge เสร็จ ลบ branch
+git branch -d feature/user-auth
+git push origin --delete feature/user-auth</code>
+                    </div>
+                </div>
+
+                <!-- Right: Graph -->
+                <div class="graph-panel">
+                    <div class="graph-card">
+                        <div class="mermaid">
+                            gitGraph
+                            commit id: "v1.0.0" tag: "v1.0.0"
+
+                            branch develop
+                            checkout develop
+                            commit id: "init-dev"
+
+                            branch feature/user-auth
+                            commit id: "①add-auth"
+                            commit id: "②commit"
+
+                            checkout develop
+                            merge feature/user-auth id: "③PR-merge" tag: "✅"
+
+                            branch feature/api-v2
+                            commit id: "api-work"
+
+                            checkout develop
+                            merge feature/api-v2 id: "PR #102" tag: "✅"
+
+                            branch bugfix/login
+                            commit id: "fix-login"
+
+                            checkout develop
+                            merge bugfix/login id: "PR #103" tag: "✅"
+
+                            branch release/v1.1.0
+                            commit id: "④⑤bump-ver"
+                            commit id: "changelog"
+
+                            checkout main
+                            merge release/v1.1.0 id: "⑥v1.1.0" tag: "v1.1.0"
+
+                            checkout develop
+                            merge release/v1.1.0 id: "⑦sync-rel"
+
+                            checkout main
+                            branch hotfix/critical
+                            commit id: "⑧emergency"
+
+                            checkout main
+                            merge hotfix/critical id: "v1.1.1" tag: "v1.1.1"
+
+                            checkout develop
+                            merge hotfix/critical id: "sync-hot"
+
+                            branch feature/dashboard
+                            commit id: "ui-work"
+
+                            checkout develop
+                            merge feature/dashboard id: "⑨cleanup" tag: "✅"
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="diagram-legend">
+                        <h4>📍 Legend</h4>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #5352ed;"></span>
+                                <span>main (production)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #2ed573;"></span>
+                                <span>develop (integration)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #ffa502;"></span>
+                                <span>feature/* (new work)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #ff4757;"></span>
+                                <span>release/* (prep)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #a55eea;"></span>
+                                <span>hotfix/* (urgent)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Table -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">📋 เปรียบเทียบ</h2>
+            </div>
+
+            <div class="graph-card">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>หัวข้อ</th>
+                            <th>ปัจจุบัน 🔴</th>
+                            <th>Best Practice 🟢</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Branch Count</td>
+                            <td class="bad">531 branches</td>
+                            <td class="good">&lt;50 branches</td>
+                        </tr>
+                        <tr>
+                            <td>Release Strategy</td>
+                            <td class="bad">382 per-client branches</td>
+                            <td class="good">1 versioned branch + config</td>
+                        </tr>
+                        <tr>
+                            <td>Direct Commits</td>
+                            <td class="bad">มี (ไม่มี review)</td>
+                            <td class="good">❌ ไม่อนุญาต</td>
+                        </tr>
+                        <tr>
+                            <td>Code Review</td>
+                            <td class="bad">บางครั้ง</td>
+                            <td class="good">✅ ทุก PR</td>
+                        </tr>
+                        <tr>
+                            <td>Version Tags</td>
+                            <td class="bad">ไม่มี</td>
+                            <td class="good">Semantic (v1.2.3)</td>
+                        </tr>
+                        <tr>
+                            <td>Branch Cleanup</td>
+                            <td class="bad">ไม่ทำ</td>
+                            <td class="good">✅ ลบหลัง merge</td>
+                        </tr>
+                        <tr>
+                            <td>Git History</td>
+                            <td class="bad">ซับซ้อน, สับสน</td>
+                            <td class="good">Clean, Linear</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Branch Naming -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">📝 Branch Naming Convention</h2>
+            </div>
+
+            <div class="naming-convention">
+                <h4 style="color: var(--accent-green); margin-bottom: 1rem;">✅ Recommended Pattern:</h4>
+
+                <!-- Branch Table -->
+                <div style="display: grid; gap: 0.75rem;">
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <code style="color: #5352ed; font-weight: 600; min-width: 280px;">main</code>
+                        <span style="color: var(--text-secondary);">→</span>
+                        <span>production code <span style="color: var(--accent-red);">(protected)</span></span>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <code style="color: #2ed573; font-weight: 600; min-width: 280px;">develop</code>
+                        <span style="color: var(--text-secondary);">→</span>
+                        <span>development integration <span style="color: var(--accent-red);">(protected)</span></span>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <code
+                            style="color: #ffa502; font-weight: 600; min-width: 280px;">feature/p̲a̲m̲-123-user-auth</code>
+                        <span style="color: var(--text-secondary);">→</span>
+                        <span>new features</span>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <code
+                            style="color: #ff6b81; font-weight: 600; min-width: 280px;">bugfix/p̲a̲m̲-456-login-fix</code>
+                        <span style="color: var(--text-secondary);">→</span>
+                        <span>bug fixes</span>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <code
+                            style="color: #ff4757; font-weight: 600; min-width: 280px;">hotfix/p̲a̲m̲-789-critical</code>
+                        <span style="color: var(--text-secondary);">→</span>
+                        <span>urgent production fixes</span>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <code style="color: #a55eea; font-weight: 600; min-width: 280px;">release/v1.2.0</code>
+                        <span style="color: var(--text-secondary);">→</span>
+                        <span>release preparation</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="naming-convention" style="margin-top: 1.5rem;">
+                <h4 style="color: var(--accent-red); margin-bottom: 1rem;">❌ Instead of per-client branches, use config:
+                </h4>
+
+                <!-- Explanation -->
+                <div style="margin-bottom: 1rem;">
+                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        <span style="color: var(--accent-red);">✖</span> ไม่ใช้ release/client-a, release/client-b, ...
+                    </p>
+                    <p style="color: var(--text-secondary);">
+                        <span style="color: var(--accent-green);">✔</span> ใช้ configuration files แทน:
+                    </p>
+                </div>
+
+                <!-- File Structure -->
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <code style="color: #ffa502;">config/clients/</code>
+                    <div style="margin-left: 1rem; margin-top: 0.5rem;">
+                        <div><code style="color: var(--accent-green);">├── client-a.yaml</code></div>
+                        <div><code style="color: var(--accent-green);">├── client-b.yaml</code></div>
+                        <div><code style="color: var(--accent-green);">├── client-c.yaml</code></div>
+                        <div><code style="color: var(--text-secondary);">└── ...</code></div>
+                    </div>
+                </div>
+
+                <!-- Deploy Command -->
+                <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.85rem;"># Deploy
+                        command:</p>
+                    <code style="color: var(--accent-green); font-size: 1rem;">DEPLOY_CLIENT=client-a make deploy</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hybrid Workflow Section - For when you can't change release branches -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-badge"
+                    style="background: rgba(255, 165, 2, 0.2); color: #ffa502; border: 1px solid #ffa502;">🟡
+                    HYBRID</span>
+                <h2 class="section-title">Hybrid Workflow (กรณียังเปลี่ยน Release Branches ไม่ได้)</h2>
+            </div>
+
+            <div class="practice-list">
+                <div class="practice-card"
+                    style="border-color: rgba(255, 165, 2, 0.3); background: rgba(255, 165, 2, 0.1);">
+                    <h3 style="color: #ffa502;">⚡ ยังคงใช้ Per-Client Branches</h3>
+                    <p>release/client-a, release/client-b ยังคงใช้ได้ แต่ต้องมีระเบียบ</p>
+                </div>
+                <div class="practice-card"
+                    style="border-color: rgba(255, 165, 2, 0.3); background: rgba(255, 165, 2, 0.1);">
+                    <h3 style="color: #ffa502;">⚡ One-Way Merge Direction</h3>
+                    <p>develop → release เท่านั้น, ห้าม release → develop (ยกเว้น hotfix)</p>
+                </div>
+                <div class="practice-card"
+                    style="border-color: rgba(255, 165, 2, 0.3); background: rgba(255, 165, 2, 0.1);">
+                    <h3 style="color: #ffa502;">⚡ Feature Branch Required</h3>
+                    <p>ทุก feature ต้องผ่าน feature branch และ PR ห้าม commit ตรง</p>
+                </div>
+                <div class="practice-card"
+                    style="border-color: rgba(255, 165, 2, 0.3); background: rgba(255, 165, 2, 0.1);">
+                    <h3 style="color: #ffa502;">⚡ Scheduled Sync</h3>
+                    <p>กำหนดวันที่จะ sync develop → all releases (เช่น ทุกวันจันทร์)</p>
+                </div>
+                <div class="practice-card"
+                    style="border-color: rgba(46, 213, 115, 0.3); background: rgba(46, 213, 115, 0.1);">
+                    <h3 style="color: #2ed573;">🏷️ Version Tagging</h3>
+                    <p>ใช้ Semantic Versioning (v1.2.3) สำหรับติดตาม release</p>
+                </div>
+            </div>
+
+            <!-- Version Tagging Section -->
+            <div class="naming-convention" style="margin-top: 1.5rem; border: 1px solid rgba(46, 213, 115, 0.3);">
+                <h4 style="color: var(--accent-green); margin-bottom: 1rem;">🏷️ Version Tagging Strategy</h4>
+
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    ใช้ <strong>Semantic Versioning</strong> เพื่อให้ติดตาม release ได้ชัดเจน
+                </p>
+
+                <!-- Tag Format -->
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.75rem;">📋 Tag Format:</p>
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+                        <code style="color: var(--accent-yellow); font-size: 1.1rem;">v{MAJOR}.{MINOR}.{PATCH}</code>
+                        <div style="margin-top: 1rem; display: grid; gap: 0.5rem;">
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <code style="color: #5352ed; min-width: 100px;">MAJOR</code>
+                                <span style="color: var(--text-secondary);">= เปลี่ยนแปลงใหญ่ (breaking changes)</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <code style="color: #2ed573; min-width: 100px;">MINOR</code>
+                                <span style="color: var(--text-secondary);">= เพิ่ม feature ใหม่ (backward
+                                    compatible)</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <code style="color: #ffa502; min-width: 100px;">PATCH</code>
+                                <span style="color: var(--text-secondary);">= แก้ bug (backward compatible)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Examples -->
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.75rem;">📌 ตัวอย่าง Tags:
+                    </p>
+                    <div style="display: grid; gap: 0.5rem;">
+                        <div
+                            style="background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <code style="color: var(--accent-green);">v2.5.0</code>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Release ใหม่ พร้อม
+                                features</span>
+                        </div>
+                        <div
+                            style="background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <code style="color: var(--accent-yellow);">v2.5.1</code>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Hotfix / Bug fix</span>
+                        </div>
+                        <div
+                            style="background: var(--bg-primary); padding: 0.75rem 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <code style="color: var(--accent-blue);">v3.0.0</code>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Major release (breaking
+                                changes)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Git Commands -->
+                <div>
+                    <p style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.75rem;">💻 Git Commands:
+                    </p>
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+                        <code style="color: var(--text-secondary);"># สร้าง annotated tag</code><br>
+                        <code style="color: var(--accent-green);">git tag -a v2.5.0 -m "Release v2.5.0"</code><br><br>
+
+                        <code style="color: var(--text-secondary);"># Push tag ไป remote</code><br>
+                        <code style="color: var(--accent-green);">git push origin v2.5.0</code><br><br>
+
+                        <code style="color: var(--text-secondary);"># ดู tags ทั้งหมด</code><br>
+                        <code style="color: var(--accent-green);">git tag -l "v*"</code>
+                    </div>
+                </div>
+
+                <!-- Note for future -->
+                <div
+                    style="margin-top: 1rem; padding: 0.75rem; background: rgba(255, 165, 2, 0.1); border-radius: 8px; border-left: 3px solid #ffa502;">
+                    <p style="color: #ffa502; font-size: 0.85rem;">
+                        💡 <strong>หมายเหตุ:</strong> สามารถเพิ่ม client name และ date ภายหลังได้ เช่น
+                        <code>v2.5.0-boodabest-20260119</code> (ตามหลัก ISO 9001)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Hybrid Workflow with Commands -->
+            <div class="workflow-container">
+                <!-- Left: Commands -->
+                <div class="commands-panel" style="border-color: rgba(255, 165, 2, 0.3);">
+                    <h3 style="color: #ffa502;">📋 Hybrid Git Commands</h3>
+
+                    <div class="command-step" data-step="1" style="border-left-color: #ffa502;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #ffa502;">1</span>
+                            <span class="step-title">สร้าง Feature Branch จาก develop</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git checkout develop
+git pull origin develop
+git checkout -b feature/p̲a̲m̲-123-new-api</code>
+                    </div>
+
+                    <div class="command-step" data-step="2" style="border-left-color: #ffa502;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #ffa502;">2</span>
+                            <span class="step-title">Commit & Push</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+git add .
+git commit -m "feat(api): add new endpoint"
+git push origin feature/p̲a̲m̲-123-new-api</code>
+                    </div>
+
+                    <div class="command-step" data-step="3" style="border-left-color: #ffa502;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #ffa502;">3</span>
+                            <span class="step-title">PR → develop (ต้อง review!)</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# สร้าง Pull Request:
+# feature/p̲a̲m̲-123-new-api → develop
+# ⚠️ ต้องมี reviewer อย่างน้อย 1 คน
+# Squash & Merge</code>
+                    </div>
+
+                    <div class="command-step" data-step="4" style="border-left-color: #2ed573;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #2ed573;">4</span>
+                            <span class="step-title">Sync develop → release (ทิศทางเดียว!)</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# ⚠️ ONE-WAY ONLY: develop → release
+
+git checkout release/client-a
+git pull origin release/client-a
+git merge develop --no-edit
+git push origin release/client-a</code>
+                    </div>
+
+                    <div class="command-step" data-step="5" style="border-left-color: #2ed573;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #2ed573;">5</span>
+                            <span class="step-title">Sync ไปยัง Client อื่นๆ</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# ทำซ้ำสำหรับแต่ละ client
+git checkout release/client-b
+git merge develop --no-edit
+git push origin release/client-b
+
+# หรือใช้ script automation</code>
+                    </div>
+
+                    <div class="command-step hotfix" data-step="6">
+                        <div class="step-header">
+                            <span class="step-number">🔥</span>
+                            <span class="step-title">Client-Specific Hotfix</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# Hotfix เฉพาะ client
+git checkout release/client-a
+git checkout -b hotfix/client-a-urgent
+
+# แก้ไข bug
+git commit -m "fix(client-a): urgent fix"
+
+# PR → release/client-a
+# ⚠️ แล้ว cherry-pick → develop</code>
+                    </div>
+
+                    <div class="command-step" data-step="7" style="border-left-color: #a55eea;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #a55eea;">7</span>
+                            <span class="step-title">Cherry-pick Hotfix → develop</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# หลัง merge hotfix แล้ว
+git checkout develop
+git cherry-pick &lt;hotfix-commit-hash&gt;
+git push origin develop
+
+# ⚠️ สำคัญ: ป้องกัน divergence</code>
+                    </div>
+
+                    <div class="command-step" data-step="8" style="border-left-color: #2ed573;">
+                        <div class="step-header">
+                            <span class="step-number" style="background: #2ed573;">8</span>
+                            <span class="step-title">🏷️ Tag Version (ทุก client)</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+# หลัง sync แล้ว สร้าง version tag ที่ทุก client
+VERSION="2.5.0"
+
+# Tag ที่ client-a
+git checkout release/client-a
+git tag -a v$VERSION -m "Release v$VERSION"
+
+# Tag ที่ client-b (tag เดียวกัน)
+git checkout release/client-b
+git tag -a v$VERSION -m "Release v$VERSION"
+
+# Push tag
+git push origin v$VERSION</code>
+                    </div>
+
+                    <div class="command-step cleanup" data-step="9">
+                        <div class="step-header">
+                            <span class="step-number">🗓️</span>
+                            <span class="step-title">Weekly Sync + Tag Script</span>
+                            <span class="arrow">→</span>
+                        </div>
+                        <code class="command-code">
+#!/bin/bash
+# sync-and-tag.sh
+VERSION="2.5.0"
+
+# Sync ทุก client
+for client in client-a client-b; do
+  git checkout release/$client
+  git merge develop --no-edit
+  git push origin release/$client
+done
+
+# Tag ทุก client ด้วย version เดียวกัน
+for client in client-a client-b; do
+  git checkout release/$client
+  git tag -a v$VERSION -m "Release v$VERSION"
+done
+
+# Push tag
+git push origin v$VERSION</code>
+                    </div>
+                </div>
+
+                <!-- Right: Graph -->
+                <div class="graph-panel">
+                    <div class="graph-card">
+                        <div class="mermaid">
+                            gitGraph
+                            commit id: "base"
+                            branch develop
+                            checkout develop
+                            commit id: "init-dev"
+
+                            branch release-client-a
+                            commit id: "client-a-cfg"
+
+                            checkout develop
+                            branch release-client-b
+                            commit id: "client-b-cfg"
+
+                            checkout develop
+                            branch feature-pa-123
+                            commit id: "1-new-api"
+                            commit id: "2-tests"
+
+                            checkout develop
+                            merge feature-pa-123 id: "3-PR" tag: "PR"
+
+                            checkout release-client-a
+                            merge develop id: "4-sync" tag: "v2.4.0"
+
+                            checkout release-client-b
+                            merge develop id: "5-sync" tag: "v2.4.0"
+
+                            checkout develop
+                            branch feature-pa-456
+                            commit id: "more-work"
+
+                            checkout develop
+                            merge feature-pa-456 id: "6-PR" tag: "PR"
+
+                            checkout release-client-a
+                            branch hotfix-client-a
+                            commit id: "7-urgent"
+
+                            checkout release-client-a
+                            merge hotfix-client-a id: "8-fix" tag: "v2.4.1"
+
+                            checkout develop
+                            commit id: "9-cherry"
+
+                            checkout release-client-a
+                            merge develop id: "10-sync" tag: "v2.5.0"
+
+                            checkout release-client-b
+                            merge develop id: "11-sync" tag: "v2.5.0"
+                        </div>
+                    </div>
+
+                    <!-- Legend for Hybrid -->
+                    <div class="diagram-legend" style="border-color: rgba(255, 165, 2, 0.3);">
+                        <h4>📍 Hybrid Flow Rules</h4>
+                        <div class="legend-items" style="flex-direction: column; gap: 0.5rem;">
+                            <div class="legend-item">
+                                <span style="color: #2ed573; font-weight: bold;">→</span>
+                                <span><strong>develop → release/xxx</strong> ✅ อนุญาต (sync)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span style="color: #ff4757; font-weight: bold;">←</span>
+                                <span><strong>release/xxx → develop</strong> ❌ ห้าม! (ใช้ cherry-pick แทน)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span style="color: #ffa502; font-weight: bold;">🔥</span>
+                                <span><strong>Client Hotfix</strong> → merge to release แล้ว cherry-pick →
+                                    develop</span>
+                            </div>
+                            <div class="legend-item">
+                                <span style="color: #a55eea; font-weight: bold;">🗓️</span>
+                                <span><strong>Weekly Sync</strong> → ทุกวันจันทร์ sync develop → all releases</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tag Strategy Note -->
+                    <div class="naming-convention" style="border: 1px solid rgba(83, 82, 237, 0.3); margin-top: 1rem;">
+                        <h4 style="color: var(--accent-blue); margin-bottom: 1rem;">🏷️ เรื่อง Tag ซ้ำกันหลาย Client
+                        </h4>
+
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            จากภาพจะเห็นว่ามีการใช้ Tag <code style="color: var(--accent-green);">v2.5.0</code>
+                            ซ้ำกันทั้งใน release-client-a และ release-client-b
+                        </p>
+
+                        <!-- Case 1: Same Logic -->
+                        <div
+                            style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                            <p style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem;">
+                                ✅ กรณี: Code (Logic) เหมือนกัน ต่างกันแค่ Config
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                → <strong>ใช้ Tag เดียวกันได้</strong> เช่น <code>v2.5.0</code> ทั้ง client-a และ
+                                client-b
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                                เพราะ source code เหมือนกัน ความต่างอยู่ที่ config/environment เท่านั้น
+                            </p>
+                        </div>
+
+                        <!-- Case 2: Different Logic -->
+                        <div
+                            style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                            <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 0.5rem;">
+                                ⚠️ กรณี: Logic ต่างกันในแต่ละ Client
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                → <strong>ควรใช้ Tag แยก</strong> เช่น <code>v2.5.0-a</code>, <code>v2.5.0-b</code>
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                                หรือใช้ระบบ <strong>Google Sheet / Release Matrix</strong> มาคุม version mapping
+                            </p>
+                        </div>
+
+                        <!-- Google Sheet Recommendation -->
+                        <div
+                            style="background: rgba(255, 165, 2, 0.1); border: 1px solid rgba(255, 165, 2, 0.3); border-radius: 8px; padding: 1rem;">
+                            <p style="color: #ffa502; font-weight: 600; margin-bottom: 0.75rem;">
+                                💡 แนะนำ: ใช้ Google Sheet / Release Matrix
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">
+                                สร้าง spreadsheet เพื่อ track version ของแต่ละ client:
+                            </p>
+                            <div
+                                style="background: var(--bg-primary); padding: 0.75rem; border-radius: 6px; overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
+                                            <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">
+                                                Client</th>
+                                            <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">
+                                                Version</th>
+                                            <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">
+                                                Tag</th>
+                                            <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">
+                                                Deploy Date</th>
+                                            <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">
+                                                Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="color: var(--text-secondary);">
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
+                                            <td style="padding: 0.5rem;">client-a</td>
+                                            <td style="padding: 0.5rem;">v2.5.0</td>
+                                            <td style="padding: 0.5rem;"><code
+                                                    style="color: var(--accent-green);">v2.5.0</code></td>
+                                            <td style="padding: 0.5rem;">2026-01-19</td>
+                                            <td style="padding: 0.5rem;">-</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
+                                            <td style="padding: 0.5rem;">client-b</td>
+                                            <td style="padding: 0.5rem;">v2.5.0</td>
+                                            <td style="padding: 0.5rem;"><code
+                                                    style="color: var(--accent-green);">v2.5.0</code></td>
+                                            <td style="padding: 0.5rem;">2026-01-19</td>
+                                            <td style="padding: 0.5rem;">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 0.5rem;">client-c</td>
+                                            <td style="padding: 0.5rem;">v2.4.2</td>
+                                            <td style="padding: 0.5rem;"><code
+                                                    style="color: var(--accent-yellow);">v2.4.2</code></td>
+                                            <td style="padding: 0.5rem;">2026-01-15</td>
+                                            <td style="padding: 0.5rem;">รอ UAT</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.75rem;">
+                                → ช่วยให้ทีมเห็นภาพรวมว่า client ไหนอยู่ version อะไร และ deploy เมื่อไหร่
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Important Warning -->
+                    <div class="naming-convention"
+                        style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 12px;">
+                        <h4 style="color: var(--accent-red); margin-bottom: 1rem;">⚠️ กฎสำคัญ - ห้ามทำ!</h4>
+
+                        <!-- Rule 1 -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 0.5rem;">
+                                ❌ ห้าม merge release → develop
+                            </p>
+                            <code style="color: var(--accent-red);">git checkout develop
+git merge release/client-a    # ❌ ห้าม!</code>
+                        </div>
+
+                        <!-- Rule 2 -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 0.5rem;">
+                                ❌ ห้าม commit ตรงไป develop
+                            </p>
+                            <code style="color: var(--accent-red);">git checkout develop
+git commit -m "quick fix"     # ❌ ห้าม! ต้องผ่าน feature branch</code>
+                        </div>
+
+                        <!-- Rule 3 -->
+                        <div>
+                            <p style="color: var(--accent-red); font-weight: 600; margin-bottom: 0.5rem;">
+                                ❌ ห้าม push ตรงไป protected branches
+                            </p>
+                            <code
+                                style="color: var(--accent-red);">git push origin develop       # ❌ ต้องผ่าน PR เท่านั้น!</code>
+                        </div>
+                    </div>
+                </div>
+        </section>
+
+        <!-- Multi-Repo Strategy Section -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-badge"
+                    style="background: rgba(83, 82, 237, 0.2); color: #5352ed; border: 1px solid #5352ed;">🔗
+                    MULTI-REPO</span>
+                <h2 class="section-title">Multi-Repo Strategy (Frontend + Backend)</h2>
+            </div>
+
+            <div class="practice-list">
+                <div class="practice-card"
+                    style="border-color: rgba(83, 82, 237, 0.3); background: rgba(83, 82, 237, 0.1);">
+                    <h3 style="color: #5352ed;">📦 p̲a̲m̲ (Backend)</h3>
+                    <p>Go API - 531 branches, 382 release branches</p>
+                </div>
+                <div class="practice-card"
+                    style="border-color: rgba(83, 82, 237, 0.3); background: rgba(83, 82, 237, 0.1);">
+                    <h3 style="color: #5352ed;">🎨 p̲a̲m̲-CMS (Frontend)</h3>
+                    <p>Nuxt.js - 288 branches, 101 release branches</p>
+                </div>
+            </div>
+
+            <!-- Deployment Scenarios -->
+            <div class="naming-convention" style="margin-top: 1.5rem; border: 1px solid rgba(83, 82, 237, 0.3);">
+                <h4 style="color: var(--accent-blue); margin-bottom: 1rem;">🚀 Deployment Scenarios</h4>
+
+                <!-- Scenario 1: Deploy Together -->
+                <div
+                    style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <p style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.75rem;">
+                        ✅ Scenario 1: Deploy พร้อมกัน (Breaking Changes / New Feature)
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">
+                        เมื่อ Backend มี API ใหม่ที่ Frontend ต้องใช้ → <strong>ต้อง deploy พร้อมกัน</strong>
+                    </p>
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 6px;">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;"># ใช้
+                            version เดียวกัน:</p>
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                            <div>
+                                <code style="color: #ffa502;">p̲a̲m̲ (Backend)</code><br>
+                                <code style="color: var(--accent-green);">v2.5.0</code>
+                            </div>
+                            <div>
+                                <code style="color: #ffa502;">p̲a̲m̲-CMS (Frontend)</code><br>
+                                <code style="color: var(--accent-green);">v2.5.0</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scenario 2: Deploy Separately -->
+                <div
+                    style="background: rgba(255, 165, 2, 0.1); border: 1px solid rgba(255, 165, 2, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <p style="color: #ffa502; font-weight: 600; margin-bottom: 0.75rem;">
+                        ⚡ Scenario 2: Deploy แยกกัน (Independent Changes)
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">
+                        เมื่อ Frontend แก้ UI / Backend แก้ logic ที่ไม่กระทบกัน → <strong>deploy แยกได้</strong>
+                    </p>
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 6px;">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;"># Version
+                            อาจต่างกัน:</p>
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                            <div>
+                                <code style="color: #ffa502;">p̲a̲m̲ (Backend)</code><br>
+                                <code style="color: var(--accent-green);">v2.5.0</code>
+                                <span style="color: var(--text-secondary); font-size: 0.8rem;"> (ไม่เปลี่ยน)</span>
+                            </div>
+                            <div>
+                                <code style="color: #ffa502;">p̲a̲m̲-CMS (Frontend)</code><br>
+                                <code style="color: var(--accent-yellow);">v2.5.1</code>
+                                <span style="color: var(--text-secondary); font-size: 0.8rem;"> (UI fix)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendation: Version Matrix -->
+                <div
+                    style="background: rgba(165, 94, 234, 0.1); border: 1px solid rgba(165, 94, 234, 0.3); border-radius: 8px; padding: 1rem;">
+                    <p style="color: #a55eea; font-weight: 600; margin-bottom: 0.75rem;">
+                        💡 แนะนำ: ใช้ Release Matrix ติดตาม Version
+                    </p>
+                    <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 6px; overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">Client
+                                    </th>
+                                    <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">p̲a̲m̲
+                                        (BE)
+                                    </th>
+                                    <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">
+                                        p̲a̲m̲-CMS
+                                        (FE)</th>
+                                    <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">Deploy
+                                        Date</th>
+                                    <th style="text-align: left; padding: 0.5rem; color: var(--accent-yellow);">Note
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody style="color: var(--text-secondary);">
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.5rem;">boodabest</td>
+                                    <td style="padding: 0.5rem;"><code style="color: var(--accent-green);">v2.5.0</code>
+                                    </td>
+                                    <td style="padding: 0.5rem;"><code style="color: var(--accent-green);">v2.5.0</code>
+                                    </td>
+                                    <td style="padding: 0.5rem;">2026-01-19</td>
+                                    <td style="padding: 0.5rem;">✅ Synced</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.5rem;">rat</td>
+                                    <td style="padding: 0.5rem;"><code style="color: var(--accent-green);">v2.5.0</code>
+                                    </td>
+                                    <td style="padding: 0.5rem;"><code
+                                            style="color: var(--accent-yellow);">v2.5.1</code></td>
+                                    <td style="padding: 0.5rem;">2026-01-20</td>
+                                    <td style="padding: 0.5rem;">FE hotfix</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0.5rem;">c7</td>
+                                    <td style="padding: 0.5rem;"><code
+                                            style="color: var(--accent-yellow);">v2.4.2</code></td>
+                                    <td style="padding: 0.5rem;"><code
+                                            style="color: var(--accent-yellow);">v2.4.2</code></td>
+                                    <td style="padding: 0.5rem;">2026-01-15</td>
+                                    <td style="padding: 0.5rem;">รอ upgrade</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Practices for Multi-Repo -->
+            <div class="naming-convention" style="margin-top: 1.5rem; border: 1px solid rgba(46, 213, 115, 0.3);">
+                <h4 style="color: var(--accent-green); margin-bottom: 1rem;">📋 Best Practices</h4>
+
+                <div style="display: grid; gap: 0.75rem;">
+                    <div
+                        style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <span style="color: var(--accent-green); font-weight: bold;">1.</span>
+                        <div>
+                            <strong style="color: var(--text-primary);">ใช้ Semantic Versioning เหมือนกัน</strong>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                ถ้า deploy พร้อมกัน → ใช้ version เดียวกัน (v2.5.0 + v2.5.0)
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <span style="color: var(--accent-green); font-weight: bold;">2.</span>
+                        <div>
+                            <strong style="color: var(--text-primary);">PATCH version สำหรับ fix แยก</strong>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                ถ้า FE fix UI อย่างเดียว → FE bump PATCH (v2.5.0 → v2.5.1)
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <span style="color: var(--accent-green); font-weight: bold;">3.</span>
+                        <div>
+                            <strong style="color: var(--text-primary);">Document API compatibility</strong>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                ระบุใน Release Notes ว่า FE version ไหน ต้องใช้คู่กับ BE version ไหน
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem; background: var(--bg-primary); border-radius: 8px;">
+                        <span style="color: var(--accent-green); font-weight: bold;">4.</span>
+                        <div>
+                            <strong style="color: var(--text-primary);">ใช้ Release Matrix / Google Sheet</strong>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                                Track ว่าแต่ละ client ใช้ FE + BE version อะไร และ deploy เมื่อไหร่
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Versioning Strategy -->
+            <div class="naming-convention" style="margin-top: 1.5rem; border: 1px solid rgba(255, 165, 2, 0.3);">
+                <h4 style="color: #ffa502; margin-bottom: 1rem;">🏷️ Versioning Strategy</h4>
+
+                <div style="display: grid; gap: 1rem;">
+                    <!-- Option A -->
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+                        <p style="color: var(--accent-green); font-weight: 600; margin-bottom: 0.5rem;">
+                            Option A: Unified Version (แนะนำ ถ้า deploy พร้อมกันบ่อย)
+                        </p>
+                        <code style="color: var(--text-secondary);">
+p̲a̲m̲: v2.5.0 + p̲a̲m̲-CMS: v2.5.0 → ทั้งคู่ใช้ version เดียวกัน
+                        </code>
+                    </div>
+                    <!-- Option B -->
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+                        <p style="color: #ffa502; font-weight: 600; margin-bottom: 0.5rem;">
+                            Option B: Independent Version (แนะนำ ถ้า deploy แยกกันบ่อย)
+                        </p>
+                        <code style="color: var(--text-secondary);">
+p̲a̲m̲: v2.5.0 + p̲a̲m̲-CMS: v3.1.2 → version อิสระจากกัน<br>
+ใช้ Release Matrix track compatibility
+                        </code>
+                    </div>
+                    <!-- Option C -->
+                    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+                        <p style="color: #a55eea; font-weight: 600; margin-bottom: 0.5rem;">
+                            Option C: Hybrid (ตามจริงที่ใช้)
+                        </p>
+                        <code style="color: var(--text-secondary);">
+Major/Minor sync: v2.5.x<br>
+PATCH แยกได้: BE v2.5.0 + FE v2.5.3
+                        </code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>📊 p̲a̲m̲ Git Workflow Analysis | Generated: 2026-01-19</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">
+                💡 Diagrams powered by Mermaid.js
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            gitGraph: {
+                showBranches: true,
+                showCommitLabel: true,
+                mainBranchName: 'main',
+                parallelCommits: false
+            },
+            themeVariables: {
+                primaryColor: '#5352ed',
+                primaryTextColor: '#ffffff',
+                primaryBorderColor: '#a55eea',
+                lineColor: '#a0a0b0',
+                secondaryColor: '#2a2a3a',
+                tertiaryColor: '#1a1a24',
+                git0: '#ff4757',
+                git1: '#2ed573',
+                git2: '#5352ed',
+                git3: '#ffa502',
+                git4: '#a55eea',
+                git5: '#1e90ff',
+                git6: '#ff6b81',
+                git7: '#7bed9f',
+                gitBranchLabel0: '#ffffff',
+                gitBranchLabel1: '#ffffff',
+                gitBranchLabel2: '#ffffff',
+                commitLabelColor: '#ffffff',
+                commitLabelBackground: '#2a2a3a'
+            }
+        });
+    </script>
+</body>
+
+</html>
